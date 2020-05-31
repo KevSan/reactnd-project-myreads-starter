@@ -3,13 +3,14 @@ import * as BooksAPI from './BooksAPI'
 import './App.css'
 import { Route, Link } from 'react-router-dom';
 import BookList from './BookList'
-import SearchResults from "./SearchResults";
 
 class BooksApp extends React.Component {
   state = {
+    query: "",
     currentlyReadingList: [],
     wantToReadList: [],
     haveReadList: [],
+    searchResults: []
   }
 
   componentDidMount() {
@@ -31,6 +32,31 @@ class BooksApp extends React.Component {
           ))
         }))
       })
+  }
+
+    updateSearchResults = (query) => {
+    this.updateQuery(query)
+    BooksAPI.search(query)
+      .then((books) => {
+        console.log("Books: ", books)
+        console.log("Bool check: ", Array.isArray(books))
+
+        if(Array.isArray(books)) {
+          this.setState(() => ({
+            searchResults: books
+          }))
+        }else {
+          this.setState(() => ({
+            searchResults: []
+          }))
+        }
+      })
+  }
+
+  updateQuery = (query) => {
+    this.setState(() => ({
+      query: query.trim(),
+    }))
   }
 
   render() {
@@ -69,12 +95,41 @@ class BooksApp extends React.Component {
         )} />
 
         <Route path='/search' render={() => (
-          <SearchResults
-            books={this.state.currentlyReadingList}
-            update={() => this.updateBookShelf()}
-          />
-        )}/>
+          <div>
+            <BookList
+              category='Currently Reading'
+              listOfBooks={this.state.searchResults}
+              update={() => this.updateBookShelf()}
+            />
+            <Link to='/search'>
+              <div className="search-books">
+                <div className="search-books-bar">
+                  <Link to='/'>
+                    {
+                      //TODO fix hover on button
+                    }
+                    <button
+                      className="close-search"
+                      onClick={() => this.updateBookShelf()}
+                    >Close</button>
+                  </Link>
 
+                  <div className="search-books-input-wrapper">
+                    <input
+                      type="text"
+                      placeholder="Search by title or author"
+                      value={this.state.query}
+                      onChange={(event) => this.updateSearchResults(event.target.value)}
+                    />
+                  </div>
+                </div>
+                <div className="search-books-results">
+                  <ol className="books-grid"></ol>
+                </div>
+              </div>
+            </Link>
+          </div>
+        )}/>
       </div>
     )
   }
