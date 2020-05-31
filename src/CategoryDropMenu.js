@@ -7,14 +7,16 @@ class CategoryDropMenu extends Component{
     value: "none"
   }
 
-  shelfMapping = {
-    'Currently Reading': 'currentlyReadingList',
-    'Want to Read': 'wantToReadList',
-    'Have Read': 'haveReadList'
-  }
-
   componentDidMount(){
     if(this.props.book.shelf !== undefined) {
+      this.setState(() => ({
+        value: this.props.book.shelf
+      }))
+    }
+  }
+
+  componentDidUpdate(prevProps) {
+    if (this.props.book.shelf !== prevProps.book.shelf) {
       this.setState(() => ({
         value: this.props.book.shelf
       }))
@@ -27,11 +29,13 @@ class CategoryDropMenu extends Component{
   }
 
   moveBook(event, book){
-    const res = BooksApi.update(book, event.target.value)
-    BooksApi.getAll().then((allBooks) => {
-      console.log("Is there an update: ", allBooks)
-    })
-    this.props.update()
+
+    book['shelf']= event.target.value
+    const res = BooksApi.update(book, event.target.value).then(() => {
+      this.props.update()
+    }
+    )
+
   }
 
   render(){
@@ -41,7 +45,6 @@ class CategoryDropMenu extends Component{
           value={this.state.value}
           onChange={(event) => this.handleOnChange(event, this.props.book)}
         >
-          {console.log("test: ", this.state)}
           <option value="move" disabled>Move to...</option>
           <option value="currentlyReading">Currently Reading</option>
           <option value="wantToRead">Want to Read</option>

@@ -1,49 +1,53 @@
 import React from 'react'
 import * as BooksAPI from './BooksAPI'
 import './App.css'
-import { Route, Link } from 'react-router-dom';
+import {Link, Route} from 'react-router-dom';
 import BookList from './BookList'
 
 class BooksApp extends React.Component {
   state = {
     query: "",
-    currentlyReadingList: [],
-    wantToReadList: [],
-    haveReadList: [],
+    allBooks: [],
+    allBooksIds: {},
     searchResults: []
   }
 
-  componentDidMount() {
+  componentDidMount = () => {
     this.updateBookShelf()
   }
 
-  updateBookShelf() {
+  arrayToObject = (array) =>
+    array.reduce((obj, item) => {
+      obj[item.id] = item.id
+      return obj
+    }, {})
+
+  updateBookShelf = () => {
     BooksAPI.getAll()
       .then((allBooks) => {
         this.setState(() => ({
-          currentlyReadingList: allBooks.filter((book) =>(
-            book.shelf.includes("currentlyReading")
-          )),
-          wantToReadList: allBooks.filter((book) =>(
-            book.shelf.includes("wantToRead")
-          )),
-          haveReadList: allBooks.filter((book) =>(
-            book.shelf.includes("read")
-          ))
+          allBooks: allBooks,
+          allBooksIds: this.arrayToObject(allBooks)
         }))
       })
   }
 
-    updateSearchResults = (query) => {
+  updateSearchResults = (query) => {
     this.updateQuery(query)
     BooksAPI.search(query)
-      .then((books) => {
-        console.log("Books: ", books)
-        console.log("Bool check: ", Array.isArray(books))
-
-        if(Array.isArray(books)) {
+      .then((searchResults) => {
+        if(Array.isArray(searchResults)) {
+          const updatedResults = searchResults.map((currBook) =>{
+            if(currBook.id in this.state.allBooksIds){
+              const shelvedBook = this.state.allBooks.filter((book) => (
+                book.id.includes(currBook.id)
+              ))
+              currBook['shelf'] = shelvedBook[0]['shelf']
+            }
+            return currBook
+          })
           this.setState(() => ({
-            searchResults: books
+            searchResults: updatedResults
           }))
         }else {
           this.setState(() => ({
@@ -53,11 +57,29 @@ class BooksApp extends React.Component {
       })
   }
 
+  filterBooksByShelf = (shelf) => {
+    return this.state.allBooks.filter((book) => (
+      book.shelf.includes(shelf)
+    ))
+  }
+
   updateQuery = (query) => {
     this.setState(() => ({
       query: query.trim(),
     }))
   }
+
+  clearQuery = () => {
+    this.setState(() => ({
+      query: '',
+    }))
+  }
+
+  goBackToHomePage = () =>{
+    this.clearQuery()
+    this.updateBookShelf()
+  }
+
 
   render() {
     return (
@@ -67,22 +89,20 @@ class BooksApp extends React.Component {
             <div className="list-books-title">
               <h1>MyReads</h1>
             </div>
-
             <BookList
               shelf='Currently Reading'
-              listOfBooks={this.state.currentlyReadingList}
+              listOfBooks={this.filterBooksByShelf("currentlyReading")}
               update={() => this.updateBookShelf()}
             />
-            {console.log("App list: ", this.state)}
             <BookList
               shelf='Want to Read'
-              listOfBooks={this.state.wantToReadList}
+              listOfBooks={this.filterBooksByShelf("wantToRead")}
               update={() => this.updateBookShelf()}
             />
 
             <BookList
               shelf='Have Read'
-              listOfBooks={this.state.haveReadList}
+              listOfBooks={this.filterBooksByShelf("read")}
               update={() => this.updateBookShelf()}
             />
 
@@ -101,33 +121,27 @@ class BooksApp extends React.Component {
               listOfBooks={this.state.searchResults}
               update={() => this.updateBookShelf()}
             />
-            <Link to='/search'>
-              <div className="search-books">
-                <div className="search-books-bar">
-                  <Link to='/'>
-                    {
-                      //TODO fix hover on button
-                    }
-                    <button
-                      className="close-search"
-                      onClick={() => this.updateBookShelf()}
-                    >Close</button>
-                  </Link>
-
-                  <div className="search-books-input-wrapper">
-                    <input
-                      type="text"
-                      placeholder="Search by title or author"
-                      value={this.state.query}
-                      onChange={(event) => this.updateSearchResults(event.target.value)}
-                    />
-                  </div>
-                </div>
-                <div className="search-books-results">
-                  <ol className="books-grid"></ol>
+            <div className="search-books">
+              <div className="search-books-bar">
+                <Link to='/'>
+                  <button
+                    className="close-search"
+                    onClick={() => this.goBackToHomePage()}
+                  >Close</button>
+                </Link>
+                <div className="search-books-input-wrapper">
+                  <input
+                    type="text"
+                    placeholder="Search by title or author"
+                    value={this.state.query}
+                    onChange={(event) => this.updateSearchResults(event.target.value)}
+                  />
                 </div>
               </div>
-            </Link>
+              <div className="search-books-results">
+                <ol className="books-grid"></ol>
+              </div>
+            </div>
           </div>
         )}/>
       </div>

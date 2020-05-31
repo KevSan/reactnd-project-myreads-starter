@@ -31,7 +31,6 @@ class BookList extends Component{
                   shelf={this.props.shelf}
                   update={this.props.update}
                 />
-                {console.log("Booklist func: ", this.props.update)}
               </li>
             ))}
           </ol>
