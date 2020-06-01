@@ -31,11 +31,9 @@ class CategoryDropMenu extends Component{
   moveBook(event, book){
 
     book['shelf']= event.target.value
-    const res = BooksApi.update(book, event.target.value).then(() => {
+    BooksApi.update(book, event.target.value).then(() => {
       this.props.update()
-    }
-    )
-
+    })
   }
 
   render(){

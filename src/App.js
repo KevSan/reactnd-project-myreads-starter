@@ -4,6 +4,12 @@ import './App.css'
 import {Link, Route} from 'react-router-dom';
 import BookList from './BookList'
 
+const shelves = {
+  currentlyReading: 'Currently Reading',
+  wantToRead: 'Want to Read',
+  read: 'Read'
+}
+
 class BooksApp extends React.Component {
   state = {
     query: "",
@@ -13,7 +19,7 @@ class BooksApp extends React.Component {
   }
 
   componentDidMount = () => {
-    this.updateBookShelf()
+    this.populateBookShelf()
   }
 
   arrayToObject = (array) =>
@@ -22,7 +28,7 @@ class BooksApp extends React.Component {
       return obj
     }, {})
 
-  updateBookShelf = () => {
+  populateBookShelf = () => {
     BooksAPI.getAll()
       .then((allBooks) => {
         this.setState(() => ({
@@ -65,7 +71,7 @@ class BooksApp extends React.Component {
 
   updateQuery = (query) => {
     this.setState(() => ({
-      query: query.trim(),
+      query: query,
     }))
   }
 
@@ -77,9 +83,8 @@ class BooksApp extends React.Component {
 
   goBackToHomePage = () =>{
     this.clearQuery()
-    this.updateBookShelf()
+    this.populateBookShelf()
   }
-
 
   render() {
     return (
@@ -89,23 +94,15 @@ class BooksApp extends React.Component {
             <div className="list-books-title">
               <h1>MyReads</h1>
             </div>
-            <BookList
-              shelf='Currently Reading'
-              listOfBooks={this.filterBooksByShelf("currentlyReading")}
-              update={() => this.updateBookShelf()}
-            />
-            <BookList
-              shelf='Want to Read'
-              listOfBooks={this.filterBooksByShelf("wantToRead")}
-              update={() => this.updateBookShelf()}
-            />
-
-            <BookList
-              shelf='Have Read'
-              listOfBooks={this.filterBooksByShelf("read")}
-              update={() => this.updateBookShelf()}
-            />
-
+            {
+              Object.keys(shelves).map(key =>
+                <BookList
+                  shelf={shelves[key]}
+                  listOfBooks={this.filterBooksByShelf(key)}
+                  update={() => this.populateBookShelf()}
+                />
+              )
+            }
             <div className="open-search">
               <Link to='/search'>
                 <button>Add a book</button>
@@ -119,7 +116,7 @@ class BooksApp extends React.Component {
             <BookList
               category='Currently Reading'
               listOfBooks={this.state.searchResults}
-              update={() => this.updateBookShelf()}
+              update={() => this.populateBookShelf()}
             />
             <div className="search-books">
               <div className="search-books-bar">
